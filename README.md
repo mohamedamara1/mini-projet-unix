@@ -1,5 +1,3 @@
-Bien sûr, vous pouvez ajouter ce scénario dans votre fichier README sur GitHub en suivant le format Markdown. Voici comment vous pouvez le faire :
-
 ```markdown
 # Instructions d'exécution
 
