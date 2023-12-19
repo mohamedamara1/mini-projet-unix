@@ -13,18 +13,27 @@ GtkWidget *username_entry, *password_entry, *service_combobox, *login_button, *s
 GtkWidget *login_grid, *service_grid;
 GtkWidget *login_window, *service_window;
 
-void send_request(const char *request) {
+struct ServerConnection {
     int client_socket;
-    struct sockaddr_in server_addr;
+};
 
+// Initialize the connection before using it
+struct ServerConnection server_connection;
+
+void initialize_server_connection() {
+    server_connection.client_socket = -1; // Set to an invalid value
+}
+
+int connect_to_server() {
     // Create socket
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    int client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (client_socket == -1) {
         perror("Error creating socket");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
     // Set up server address structure
+    struct sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
@@ -34,41 +43,69 @@ void send_request(const char *request) {
     if (connect(client_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("Error connecting to server");
         close(client_socket);
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
-    // Send request to the server
-    send(client_socket, request, strlen(request), 0);
+    return client_socket;
+}
 
-    // Receive and process the server's response (you need to implement this part)
-    // For simplicity, we just print the response here
-    char buffer[BUFFER_SIZE];
-    ssize_t bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-    if (bytes_received > 0) {
-        buffer[bytes_received] = '\0';
-        printf("Server response: %s\n", buffer);
 
-        // Check if authentication is successful
-        if (strcmp(buffer, "AUTH_SUCCESS") == 0) {
-            // Authentication successful, show the services menu
-            gtk_widget_show(service_combobox);
-            gtk_widget_show(service_label);
-        } else {
-            // Authentication failed, hide the services menu
-            gtk_widget_hide(service_combobox);
-            gtk_widget_hide(service_label);
+void send_request(struct ServerConnection *connection, const char *request, char *response, size_t response_size) {
+    if (connection->client_socket == -1) {
+        // Create socket if not already created
+        connection->client_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (connection->client_socket == -1) {
+            perror("Error creating socket");
+            exit(EXIT_FAILURE);
         }
+
+    }
+    // Formulate the request for the "Send Date" service
+    send(connection->client_socket, request, strlen(request), 0);
+
+    // Receive and process the server's response
+    ssize_t bytes_received = recv(connection->client_socket, response, response_size - 1, 0);
+    if (bytes_received > 0) {
+        response[bytes_received] = '\0';
+        printf("Server response: %s\n", response);
     }
 
-    // Close the client socket
-    close(client_socket);
+}
+// Callback function for the list files submit button
+void on_list_files_submit_button_clicked(GtkButton *button, gpointer user_data) {
+    // Get the directory path from the entry widget
+    const char *directory_path = gtk_entry_get_text(GTK_ENTRY(user_data));
+
+    // Formulate the request for the "List Files" service
+    char request[BUFFER_SIZE];
+    snprintf(request, BUFFER_SIZE, "LIST_FILES %s", directory_path);
+
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
+
+    // Uncomment the following line to use the actual server response
+     send_request(&server_connection, request, response, strlen(response));
+
+    // Create a new pop-up window to display the list of files
+    GtkWidget *files_popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(files_popup_window), "List of Files");
+    gtk_container_set_border_width(GTK_CONTAINER(files_popup_window), 10);
+    gtk_widget_set_size_request(files_popup_window, 300, 200);
+
+    // Create a label to display the list of files
+    GtkWidget *files_label = gtk_label_new(response);
+    gtk_container_add(GTK_CONTAINER(files_popup_window), files_label);
+
+    // Show all widgets in the files pop-up window
+    gtk_widget_show_all(files_popup_window);
 }
 
 void handle_login_response(const char *response) {
     // Check if authentication is successful
     if (strcmp(response, "AUTH_SUCCESS") == 0) {
         // Authentication successful, hide the main window
-        printf("auth sucess");
+        printf("auth success");
         gtk_widget_hide(login_window);
 
         gtk_widget_show_all(service_window);
@@ -81,6 +118,17 @@ void handle_login_response(const char *response) {
 }
 
 void on_login_button_clicked(GtkButton *button, gpointer user_data) {
+    // Ensure the server connection is initialized
+    initialize_server_connection();
+
+    // Connect to the server
+    server_connection.client_socket = connect_to_server();
+    if (server_connection.client_socket == -1) {
+        // Handle connection error, show message to the user, etc.
+        fprintf(stderr, "Failed to connect to the server\n");
+        return;
+    }
+
     const char *username = gtk_entry_get_text(GTK_ENTRY(username_entry));
     const char *password = gtk_entry_get_text(GTK_ENTRY(password_entry));
 
@@ -88,14 +136,129 @@ void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     char request[BUFFER_SIZE];
     snprintf(request, BUFFER_SIZE, "LOGIN %s %s", username, password);
 
-    // Send the request to the server
-    send_request(request);
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
+
+    // Call the send_request function
+    send_request(&server_connection, request, response, response_size);
 
     // Handle the server response
-    handle_login_response("AUTH_SUCCESS");  // For testing, replace with actual response handling
+    handle_login_response(response);
+
+    // Close the socket connection after handling the response
+    close(server_connection.client_socket);
 }
 
+
+
+// Modify the on_send_date_button_clicked function
+void on_send_date_button_clicked(GtkButton *button, gpointer user_data) {
+    // Formulate the request for the "Send Date" service
+    const char *request = "SEND_DATE";
+
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
+
+    // Call the send_request function
+//    send_request(&server_connection, request, response, response_size);
+
+    // Create a new pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "Send Date");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 200, 100);
+
+    // Create a label to display the date
+    GtkWidget *date_label = gtk_label_new(response);
+    gtk_container_add(GTK_CONTAINER(popup_window), date_label);
+
+    // Show all widgets in the pop-up window
+    gtk_widget_show_all(popup_window);
+}
+// Modify the on_list_files_button_clicked function
+void on_list_files_button_clicked(GtkButton *button, gpointer user_data) {
+    // Create a new pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "List Files");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 300, 200);
+
+    // Create a grid for layout
+    GtkWidget *grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(popup_window), grid);
+
+    // Create and add an entry widget for the directory path
+    GtkWidget *directory_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(directory_entry), "Enter Directory Path");
+    gtk_grid_attach(GTK_GRID(grid), directory_entry, 0, 0, 1, 1);
+
+    // Create and add a button to list files
+    GtkWidget *list_files_button = gtk_button_new_with_label("List Files");
+    g_signal_connect(list_files_button, "clicked", G_CALLBACK(on_list_files_submit_button_clicked), directory_entry);
+    gtk_grid_attach(GTK_GRID(grid), list_files_button, 0, 1, 1, 1);
+
+    // Show all widgets in the pop-up window
+    gtk_widget_show_all(popup_window);
+}
+
+
+void on_show_file_content_button_clicked(GtkButton *button, gpointer user_data) {
+    // Create a new pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "Show File Content");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 300, 200);
+
+    // Get the filename from the user (you can use a GtkEntry for this)
+    // For simplicity, let's assume the filename is hardcoded for now
+    const char *filename = "example.txt";
+
+    // Formulate the request for the "Show File Content" service
+    char request[BUFFER_SIZE];
+    snprintf(request, BUFFER_SIZE, "SHOW_FILE_CONTENT %s", filename);
+
+    // Send the request to the backend
+   // send_request(request);
+
+    // Implement the logic to display the response in the pop-up window
+    // You need to parse and format the response received from the backend
+
+    // Show all widgets in the pop-up window
+    gtk_widget_show_all(popup_window);
+}
+
+void on_send_session_duration_button_clicked(GtkButton *button, gpointer user_data) {
+    // Formulate the request for the "Send Date" service
+    const char *request = "SESSION_DURATION";
+
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
+
+    // Call the send_request function
+    send_request(&server_connection, request, response, response_size);
+
+    // Create a new pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "Session Duration");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 200, 100);
+
+    // Create a label to display the date
+    GtkWidget *date_label = gtk_label_new(response);
+    gtk_container_add(GTK_CONTAINER(popup_window), date_label);
+
+    // Show all widgets in the pop-up window
+    gtk_widget_show_all(popup_window);
+}
+
+
+
 int main(int argc, char *argv[]) {
+    initialize_server_connection();
+
     gtk_init(&argc, &argv);
 
 
@@ -118,6 +281,10 @@ int main(int argc, char *argv[]) {
     login_grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(login_window), login_grid);
 
+    // Create a grid for layout
+    service_grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(service_window), service_grid);
+
     // Create and add entry widgets for username and password
     username_entry = gtk_entry_new();
     password_entry = gtk_entry_new();
@@ -133,18 +300,41 @@ int main(int argc, char *argv[]) {
     g_signal_connect(login_button, "clicked", G_CALLBACK(on_login_button_clicked), NULL);
     gtk_grid_attach(GTK_GRID(login_grid), login_button, 0, 2, 1, 1);
 
-    // Create and add a label for the services menu
-    service_label = gtk_label_new("Select a Servicee:");
-    gtk_grid_attach(GTK_GRID(service_grid), service_label, 0, 3, 1, 1);
-    gtk_widget_hide(service_label);  // Initially hide the service label
+// Create the service window
+    service_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(service_window), "Services");
+    gtk_container_set_border_width(GTK_CONTAINER(service_window), 10);
+    gtk_widget_set_size_request(service_window, 300, 200);
+    g_signal_connect(service_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    // Create and add a combo box for service selection
-    service_combobox = gtk_combo_box_text_new();
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(service_combobox), "Service A");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(service_combobox), "Service B");
-    // Add more services as needed
-    gtk_grid_attach(GTK_GRID(service_grid), service_combobox, 0, 4, 1, 1);
-    gtk_widget_hide(service_combobox);  // Initially hide the service combobox
+// Create a grid for layout
+    service_grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(service_window), service_grid);
+
+// Create and add a label for the services menu
+    service_label = gtk_label_new("Select a Service:");
+    gtk_grid_attach(GTK_GRID(service_grid), service_label, 0, 0, 1, 1);
+
+// ... (existing code)
+
+// Create and add buttons for service selection
+    GtkWidget *send_date_button = gtk_button_new_with_label("Send Date");
+    g_signal_connect(send_date_button, "clicked", G_CALLBACK(on_send_date_button_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(service_grid), send_date_button, 0, 1, 1, 1);
+
+    GtkWidget *list_files_button = gtk_button_new_with_label("List Files");
+    g_signal_connect(list_files_button, "clicked", G_CALLBACK(on_list_files_button_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(service_grid), list_files_button, 0, 2, 1, 1);
+
+    GtkWidget *show_file_content_button = gtk_button_new_with_label("Show File Content");
+    g_signal_connect(show_file_content_button, "clicked", G_CALLBACK(on_show_file_content_button_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(service_grid), show_file_content_button, 0, 3, 1, 1);
+
+    GtkWidget *send_session_duration_button = gtk_button_new_with_label("Send Session Duration");
+    g_signal_connect(send_session_duration_button, "clicked", G_CALLBACK(on_send_session_duration_button_clicked), NULL);
+    gtk_grid_attach(GTK_GRID(service_grid), send_session_duration_button, 0, 4, 1, 1);
+
+
 
     // Show all widgets
     gtk_widget_show_all(login_window);

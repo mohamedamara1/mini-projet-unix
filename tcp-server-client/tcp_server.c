@@ -3,18 +3,66 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
 
 #define PORT 12345
 #define BUFFER_SIZE 1024
 
-void handle_client(int client_socket) {
-    // Handle client requests here
-    // This is a placeholder, you need to implement the actual logic
+#define USER "admin"
+#define PASSWORD "password"
 
+bool authenticate_user(const char *username, const char *password) {
+    return (strcmp(username, USER) == 0) && (strcmp(password, PASSWORD) == 0);
+}
+
+void handle_login(int client_socket, const char *username, const char *password) {
+    if (authenticate_user(username, password)) {
+        const char *auth_success_response = "AUTH_SUCCESS";
+        send(client_socket, auth_success_response, strlen(auth_success_response), 0);
+    } else {
+        const char *auth_fail_response = "AUTH_FAIL";
+        send(client_socket, auth_fail_response, strlen(auth_fail_response), 0);
+    }
+}
+
+void handle_send_date(int client_socket) {
+    // Implement logic for the "SEND_DATE" service
+    // This is just a placeholder; replace it with your actual implementation
+
+    const char *date_response = "Current Date: YYYY-MM-DD";
+    send(client_socket, date_response, strlen(date_response), 0);
+}
+
+void handle_list_files(int client_socket) {
+    // Implement logic for the "LIST_FILES" service
+    // This is just a placeholder; replace it with your actual implementation
+
+    const char *files_response = "File1.txt\nFile2.txt\nFile3.txt";
+    send(client_socket, files_response, strlen(files_response), 0);
+}
+
+void handle_show_file_content(int client_socket, const char *filename) {
+    // Implement logic for the "SHOW_FILE_CONTENT" service
+    // This is just a placeholder; replace it with your actual implementation
+
+    // Example: Read the content of the file (replace with actual file reading logic)
+    const char *file_content = "Content of the file...";
+    send(client_socket, file_content, strlen(file_content), 0);
+}
+
+void handle_send_session_duration(int client_socket) {
+    // Implement logic for the "SEND_SESSION_DURATION" service
+    // This is just a placeholder; replace it with your actual implementation
+
+    const char *session_duration_response = "Session duration: 60 minutes";
+    send(client_socket, session_duration_response, strlen(session_duration_response), 0);
+}
+
+void handle_client(int client_socket) {
     char buffer[BUFFER_SIZE];
     ssize_t bytes_received;
 
-    // Example: Receive data from the client
+    // Receive data from the client
     bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
     if (bytes_received < 0) {
         perror("Error receiving data from client");
@@ -22,18 +70,35 @@ void handle_client(int client_socket) {
         return;
     }
 
-    // Example: Process the received data (you need to implement this part)
-    // For simplicity, we just print the received data here
+    // Process the received data
     buffer[bytes_received] = '\0';
-    printf("Received from client: %s\n", buffer);
 
-    // Example: Send a response back to the client (you need to implement this part)
-    const char *response = "Server received your request.";
-    send(client_socket, response, strlen(response), 0);
+    // Check the request type and call the appropriate service handler
+    if (strcmp(buffer, "SEND_DATE") == 0) {
+        handle_send_date(client_socket);
+    } else if (strcmp(buffer, "LIST_FILES") == 0) {
+        handle_list_files(client_socket);
+    } else if (strncmp(buffer, "SHOW_FILE_CONTENT", strlen("SHOW_FILE_CONTENT")) == 0) {
+        // Extract the filename from the request
+        const char *filename = buffer + strlen("SHOW_FILE_CONTENT") + 1;
+        handle_show_file_content(client_socket, filename);
+    } else if (strcmp(buffer, "SEND_SESSION_DURATION") == 0) {
+        handle_send_session_duration(client_socket);
+    } else if (strncmp(buffer, "LOGIN", strlen("LOGIN")) == 0) {
+        // Extract the username and password from the request
+        const char *username = strtok(buffer + strlen("LOGIN") + 1, " ");
+        const char *password = strtok(NULL, " ");
+        handle_login(client_socket, username, password);
+    } else {
+        // Unknown service request
+        const char *unknown_response = "Unknown service request";
+        send(client_socket, unknown_response, strlen(unknown_response), 0);
+    }
 
     // Close the client socket
     close(client_socket);
 }
+
 
 int main() {
     int server_socket, client_socket;
@@ -76,7 +141,7 @@ int main() {
             perror("Error accepting connection");
             continue;
         }
-
+        printf("client connected");
         // Fork a child process to handle the client
         if (fork() == 0) {
             // In child process
