@@ -1,4 +1,3 @@
-```markdown
 # Instructions d'exécution
 
 Voici un guide étape par étape pour compiler et exécuter les fichiers du serveur et du client en utilisant un Makefile.
