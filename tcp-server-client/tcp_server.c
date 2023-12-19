@@ -5,8 +5,10 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <time.h>
+#include <dirent.h>
+#include <locale.h>
 
-#define PORT 5020
+#define PORT 5010
 #define BUFFER_SIZE 1024
 
 #define USER "admin"
@@ -27,6 +29,38 @@ void handle_login(int client_socket, const char *username, const char *password)
     }
 }
 
+// Function to get a list of files in the specified directory
+char* get_files_in_directory(const char* directory_path) {
+    DIR *dir;
+    struct dirent *entry;
+    char *result = NULL;
+    setlocale(LC_ALL, "en_US.UTF-8");  // Set the locale to handle UTF-8
+
+    dir = opendir(directory_path);
+    if (dir != NULL) {
+        while ((entry = readdir(dir)) != NULL) {
+            // Ignore "." and ".." entries
+            if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+                // Allocate memory for the result string (or extend it)
+                size_t current_len = (result == NULL) ? 0 : strlen(result);
+                size_t new_len = current_len + strlen(entry->d_name) + 2; // +2 for '\n' and '\0'
+                result = realloc(result, new_len);
+
+                // Concatenate the filename to the result string
+                if (result != NULL) {
+                    strcat(result, entry->d_name);
+                    strcat(result, "\n");
+                } else {
+                    perror("Error reallocating memory");
+                    break;
+                }
+            }
+        }
+        closedir(dir);
+    }
+
+    return result;
+}
 
 void handle_send_date(int client_socket) {
     time_t rawtime;
@@ -39,17 +73,38 @@ void handle_send_date(int client_socket) {
 
     // Format the date and time as a string
     strftime(date_response, sizeof(date_response), "Current Date: %Y-%m-%d %H:%M:%S", timeinfo);
-    printf("printing time%s\n", date_response);
+    printf("printing time %s\n", date_response);
     // Send the response to the client
     send(client_socket, date_response, strlen(date_response), 0);
 }
-void handle_list_files(int client_socket) {
-    // Implement logic for the "LIST_FILES" service
-    // This is just a placeholder; replace it with your actual implementation
+void handle_list_files(int client_socket, const char* buffer) {
+    char directory_path[BUFFER_SIZE];
 
-    const char *files_response = "File1.txt\nFile2.txt\nFile3.txt";
-    send(client_socket, files_response, strlen(files_response), 0);
+    // Use sscanf to safely parse the directory path from the buffer
+    if (sscanf(buffer, "LIST_FILES %s", directory_path) == 1) {
+        printf("directory path %s\n", directory_path);
+        // Get the list of files and directories in the specified directory
+        char* files_response = get_files_in_directory(directory_path);
+        printf("files response %s\n", files_response);
+        if (files_response != NULL) {
+            // Send the list of files and directories to the client
+            send(client_socket, files_response, strlen(files_response), 0);
+
+            // Free the dynamically allocated memory
+            free(files_response);
+        } else {
+            // Send an error response if unable to get the list
+            const char *error_response = "Error getting list of files and directories";
+            send(client_socket, error_response, strlen(error_response), 0);
+        }
+    } else {
+        // Handle error: Invalid request format
+        const char *error_response = "Invalid request format";
+        send(client_socket, error_response, strlen(error_response), 0);
+    }
 }
+
+
 
 void handle_show_file_content(int client_socket, const char *filename) {
     // Implement logic for the "SHOW_FILE_CONTENT" service
@@ -101,8 +156,8 @@ void handle_client(int client_socket) {
         // Check the request type and call the appropriate service handler
         if (strcmp(buffer, "SEND_DATE") == 0) {
             handle_send_date(client_socket);
-        } else if (strcmp(buffer, "LIST_FILES") == 0) {
-            handle_list_files(client_socket);
+        } else if (strncmp(buffer, "LIST_FILES", strlen("LIST_FILES")) == 0) {
+            handle_list_files(client_socket, buffer);
         } else if (strncmp(buffer, "SHOW_FILE_CONTENT", strlen("SHOW_FILE_CONTENT")) == 0) {
             // Extract the filename from the request
             const char *filename = buffer + strlen("SHOW_FILE_CONTENT") + 1;

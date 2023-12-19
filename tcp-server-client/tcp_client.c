@@ -6,7 +6,7 @@
 #include <gtk/gtk.h>
 
 #define SERVER_IP "127.0.0.1"
-#define PORT 5020
+#define PORT 5010
 #define BUFFER_SIZE 1024
 
 GtkWidget *username_entry, *password_entry, *service_combobox, *login_button, *service_label;
@@ -70,7 +70,9 @@ void send_request(struct ServerConnection *connection, const char *request, char
     }
 
 }
-// Callback function for the list files submit button
+
+
+// Corrected on_list_files_submit_button_clicked function
 void on_list_files_submit_button_clicked(GtkButton *button, gpointer user_data) {
     // Get the directory path from the entry widget
     const char *directory_path = gtk_entry_get_text(GTK_ENTRY(user_data));
@@ -83,28 +85,50 @@ void on_list_files_submit_button_clicked(GtkButton *button, gpointer user_data) 
     char response[BUFFER_SIZE];
     size_t response_size = sizeof(response);
 
-    // Uncomment the following line to use the actual server response
-     send_request(&server_connection, request, response, strlen(response));
+    // Call the send_request function
+    send_request(&server_connection, request, response, response_size);
 
-    // Create a new pop-up window to display the list of files
-    GtkWidget *files_popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(files_popup_window), "List of Files");
-    gtk_container_set_border_width(GTK_CONTAINER(files_popup_window), 10);
-    gtk_widget_set_size_request(files_popup_window, 300, 200);
+    // Create a text view to display the list of files
+    GtkWidget *files_text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(files_text_view), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(files_text_view), GTK_WRAP_WORD);
 
-    // Create a label to display the list of files
-    GtkWidget *files_label = gtk_label_new(response);
-    gtk_container_add(GTK_CONTAINER(files_popup_window), files_label);
+    // Create a scrolled window to handle scrolling and add the text view
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), files_text_view);
 
-    // Show all widgets in the files pop-up window
-    gtk_widget_show_all(files_popup_window);
+    // Set properties for the scrolled window
+    gtk_container_set_border_width(GTK_CONTAINER(scrolled_window), 10);
+    gtk_widget_set_size_request(scrolled_window, 300, 200);
+
+    // Show all widgets in the scrolled window
+    gtk_widget_show_all(scrolled_window);
+
+    // Set the response text to the text view
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(files_text_view)), response, -1);
+
+    // Create a new pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "List Files");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 300, 200);
+
+    // Create a grid for layout
+    GtkWidget *grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(popup_window), grid);
+
+    // Add the scrolled window to the grid
+    gtk_grid_attach(GTK_GRID(grid), scrolled_window, 0, 0, 1, 1);
+
+    // Show all widgets in the pop-up window
+    gtk_widget_show_all(popup_window);
 }
 
 void handle_login_response(const char *response) {
     // Check if authentication is successful
     if (strcmp(response, "AUTH_SUCCESS") == 0) {
         // Authentication successful, hide the main window
-        printf("auth success");
+        printf("auth success\n");
         gtk_widget_hide(login_window);
 
         gtk_widget_show_all(service_window);
@@ -142,7 +166,6 @@ void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     // Call the send_request function
     send_request(&server_connection, request, response, response_size);
 
-    // Handle the server response
     handle_login_response(response);
 
 }
