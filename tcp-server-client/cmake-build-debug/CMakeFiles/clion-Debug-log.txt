@@ -1,0 +1,13 @@
+/app/extra/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/app/extra/clion/bin/ninja/linux/x64/ninja -G Ninja -S /home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client -B /home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug
+-- The C compiler identification is GNU 13.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version "2.0.2") 
+-- Checking for module 'gtk+-3.0'
+--   Found gtk+-3.0, version 3.24.38
+-- Configuring done (0.5s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug

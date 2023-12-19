@@ -41,7 +41,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    printf("UDP server is listening on port %d...\n", PORT);
+    printf("UDP server is listening onnn port %d...\n", PORT);
 
     while (1) {
         // Receive data from client
