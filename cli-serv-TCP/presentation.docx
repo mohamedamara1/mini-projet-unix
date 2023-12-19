@@ -1,0 +1,48 @@
+Titre du Projet : Application Client/Serveur TCP avec fork()
+Objectif du Projet :
+Le projet vise à développer une application client/serveur utilisant le protocole TCP, avec la gestion des connexions concurrentes réalisée à l'aide de la fonction fork() en langage C. L'application permet aux clients d'interagir avec le serveur en lui envoyant des demandes de services spécifiques.
+
+Fonctionnalités Clés :
+
+1- Authentification :
+
+Le processus client doit fournir un nom d'utilisateur et un mot de passe pour s'authentifier auprès du serveur.
+
+2- Services du Serveur :
+
+Envoie de la date complète de l'horloge système du serveur.
+Envoie de la liste des fichiers d'un répertoire.
+Envoie du contenu d'un fichier spécifié par le client.
+Envoie de la durée écoulée depuis le début de la connexion du client courant.
+Possibilité de se déconnecter.
+
+3- Communication Client/Serveur :
+
+La communication entre le client et le serveur se fait à travers le protocole TCP.
+Le serveur gère les connexions concurrentes à l'aide de la fonction fork(), créant un processus fils pour chaque client.
+
+Organisation du Projet :
+
+Structure du Projet :
+
+src/serveurTCP_fork.c: Code source du serveur avec la gestion des forks.
+src/clientTCP_fork.c: Code source du client avec l'interface utilisateur.
+Makefile: Fichier pour automatiser le processus de compilation.
+
+Compilation et Exécution :
+
+Le projet est compilé à l'aide du Makefile en exécutant la commande make.
+Les exécutables générés sont serveurTCP_fork et clientTCP_fork.
+Le serveur s'exécute avec la commande ./serveurTCP_fork <port>.
+Le client s'exécute avec la commande ./clientTCP_fork <adresse_serveur> <port>.
+
+Notes d'Utilisation :
+
+Les utilisateurs doivent fournir un nom d'utilisateur et un mot de passe valides pour accéder aux services du serveur.
+Le client peut sélectionner divers services à l'aide d'une interface utilisateur.
+La déconnexion du client est possible à tout moment.
+
+Remarques Techniques :
+
+Le serveur utilise la fonction fork() pour gérer les connexions simultanées de plusieurs clients.
+La communication entre le client et le serveur repose sur le protocole TCP pour garantir la fiabilité des données.
