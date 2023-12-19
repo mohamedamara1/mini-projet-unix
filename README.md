@@ -77,6 +77,3 @@ make clean
 ```
 
 Cela supprimera les fichiers exécutables générés (`serveurTCP_fork` et `clientTCP_IHM`).
-```
-
-Cela devrait fournir aux utilisateurs de votre projet des instructions claires sur la façon de compiler, exécuter et nettoyer le projet. Vous pouvez également personnaliser davantage le contenu en fonction des besoins spécifiques de votre projet.
