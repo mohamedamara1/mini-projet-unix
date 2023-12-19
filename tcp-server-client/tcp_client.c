@@ -6,7 +6,7 @@
 #include <gtk/gtk.h>
 
 #define SERVER_IP "127.0.0.1"
-#define PORT 12345
+#define PORT 5020
 #define BUFFER_SIZE 1024
 
 GtkWidget *username_entry, *password_entry, *service_combobox, *login_button, *service_label;
@@ -49,18 +49,17 @@ int connect_to_server() {
     return client_socket;
 }
 
+void close_connection() {
+    if (server_connection.client_socket != -1) {
+        printf("Closing connection \n");
+        close(server_connection.client_socket);
+        server_connection.client_socket = -1;
+    }
+}
+
 
 void send_request(struct ServerConnection *connection, const char *request, char *response, size_t response_size) {
-    if (connection->client_socket == -1) {
-        // Create socket if not already created
-        connection->client_socket = socket(AF_INET, SOCK_STREAM, 0);
-        if (connection->client_socket == -1) {
-            perror("Error creating socket");
-            exit(EXIT_FAILURE);
-        }
-
-    }
-    // Formulate the request for the "Send Date" service
+    printf("Sending request: %s\n", request);
     send(connection->client_socket, request, strlen(request), 0);
 
     // Receive and process the server's response
@@ -146,8 +145,6 @@ void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     // Handle the server response
     handle_login_response(response);
 
-    // Close the socket connection after handling the response
-    close(server_connection.client_socket);
 }
 
 
@@ -162,7 +159,7 @@ void on_send_date_button_clicked(GtkButton *button, gpointer user_data) {
     size_t response_size = sizeof(response);
 
     // Call the send_request function
-//    send_request(&server_connection, request, response, response_size);
+    send_request(&server_connection, request, response, response_size);
 
     // Create a new pop-up window
     GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -341,6 +338,9 @@ int main(int argc, char *argv[]) {
 
     // Start the GTK main loop
     gtk_main();
+
+    // Close the connection when the user quits the program
+    close_connection();
 
     return 0;
 }
