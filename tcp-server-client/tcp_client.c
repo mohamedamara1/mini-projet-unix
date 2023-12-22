@@ -224,29 +224,57 @@ void on_list_files_button_clicked(GtkButton *button, gpointer user_data) {
 }
 
 
-void on_show_file_content_button_clicked(GtkButton *button, gpointer user_data) {
-    // Create a new pop-up window
-    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(popup_window), "Show File Content");
-    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
-    gtk_widget_set_size_request(popup_window, 300, 200);
-
-    // Get the filename from the user (you can use a GtkEntry for this)
-    // For simplicity, let's assume the filename is hardcoded for now
-    const char *filename = "example.txt";
-
+// New function to send a request for file content
+void send_file_content_request(const char *filename) {
     // Formulate the request for the "Show File Content" service
     char request[BUFFER_SIZE];
     snprintf(request, BUFFER_SIZE, "SHOW_FILE_CONTENT %s", filename);
 
-    // Send the request to the backend
-   // send_request(request);
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
 
-    // Implement the logic to display the response in the pop-up window
-    // You need to parse and format the response received from the backend
+    // Call the send_request function
+    send_request(&server_connection, request, response, response_size);
+
+    // Display the file content in a pop-up window
+    GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(popup_window), "File Content");
+    gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
+    gtk_widget_set_size_request(popup_window, 400, 300);
+
+    // Create a text view to display the file content
+    GtkWidget *file_content_text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(file_content_text_view), FALSE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(file_content_text_view), GTK_WRAP_WORD);
+
+    // Create a scrolled window to handle scrolling and add the text view
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), file_content_text_view);
+
+    // Set properties for the scrolled window
+    gtk_container_set_border_width(GTK_CONTAINER(scrolled_window), 10);
+    gtk_widget_set_size_request(scrolled_window, 300, 200);
+
+    // Show all widgets in the scrolled window
+    gtk_widget_show_all(scrolled_window);
+
+    // Set the file content to the text view
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(file_content_text_view)), response, -1);
+
+    // Add the scrolled window to the pop-up window
+    gtk_container_add(GTK_CONTAINER(popup_window), scrolled_window);
 
     // Show all widgets in the pop-up window
     gtk_widget_show_all(popup_window);
+}
+// the on_show_file_content_button_clicked function
+void on_show_file_content_button_clicked(GtkButton *button, gpointer user_data) {
+    // Get the filename from the user (you can use a GtkEntry for this)
+    const char *filename = gtk_entry_get_text(GTK_ENTRY(user_data));
+
+    // Call the new function to send the request for file content
+    send_file_content_request(filename);
 }
 
 void on_send_session_duration_button_clicked(GtkButton *button, gpointer user_data) {
