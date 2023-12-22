@@ -107,12 +107,37 @@ void handle_list_files(int client_socket, const char* buffer) {
 
 
 void handle_show_file_content(int client_socket, const char *filename) {
-    // Implement logic for the "SHOW_FILE_CONTENT" service
-    // This is just a placeholder; replace it with your actual implementation
+   void handle_show_file_content(int client_socket, const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file != NULL) {
+        fseek(file, 0, SEEK_END);
+        long file_size = ftell(file);
+        rewind(file);
 
-    // Example: Read the content of the file (replace with actual file reading logic)
-    const char *file_content = "Content of the file...";
-    send(client_socket, file_content, strlen(file_content), 0);
+        char *file_content = (char *)malloc(file_size + 1);
+        if (file_content != NULL) {
+            size_t read_size = fread(file_content, 1, file_size, file);
+            fclose(file);
+
+            if (read_size == file_size) {
+                file_content[file_size] = '\0';
+                send(client_socket, file_content, file_size, 0);
+            } else {
+                const char *error_response = "Error reading file content";
+                send(client_socket, error_response, strlen(error_response), 0);
+            }
+
+            free(file_content);
+        } else {
+            const char *error_response = "Memory allocation error";
+            send(client_socket, error_response, strlen(error_response), 0);
+        }
+    } else {
+        const char *error_response = "Error opening file";
+        send(client_socket, error_response, strlen(error_response), 0);
+    }
+}
+
 }
 
 
