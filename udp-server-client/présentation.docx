@@ -1,42 +1,42 @@
-**Titre du Projet :** Application Client/Serveur UDP de Génération de Nombres Aléatoires
+Titre du Projet : Application Client/Serveur UDP de Génération de Nombres Aléatoires
 
-**Objectif du Projet :**
+Objectif du Projet :
 L'objectif de ce projet est de développer une application client/serveur utilisant le protocole UDP, permettant ainsi au serveur de générer des nombres aléatoires en réponse à des requêtes spécifiques émises par le client. L'accent est mis sur la communication non orientée connexion, adaptée aux applications où la latence est critique, et sur la dynamique des réponses du serveur.
 
-**Fonctionnalités Clés :**
+Fonctionnalités Clés :
 
-1. **Génération de Nombres Aléatoires :**
+1. Génération de Nombres Aléatoires :
    - Le client envoie une requête sous forme de nombre au serveur.
    - Le serveur génère un tableau de nombres aléatoires en fonction de la taille spécifiée dans la requête.
 
-2. **Utilisation de Sockets UDP :**
+2. Utilisation de Sockets UDP :
    - La communication entre le client et le serveur s'effectue à travers le protocole UDP.
    - Cette approche permet une communication non connecté, adaptée aux applications où la latence est critique.
 
-3. **Gestion des Erreurs :**
+3. Gestion des Erreurs :
    - Les deux applications incluent des mécanismes de gestion d'erreur pour détecter les problèmes liés à la création de sockets, à la liaison, et à la réception/envoi de données.
    - La fonction `perror` est utilisée pour afficher des messages d'erreur détaillés en cas de problème.
 
-**Organisation du Projet :**
+Organisation du Projet :
 
-**Structure du Projet :**
+ Structure du Projet :
    - `udp_client.c`: Code source du client avec la génération de la requête et l'affichage de la réponse.
    - `udp_server.c`: Code source du serveur avec la génération des nombres aléatoires en réponse aux requêtes.
    - `build_and_link.h`: Fichier pour automatiser le processus de compilation.
    
 
-**Compilation et Exécution :**
+Compilation et Exécution :
    - Le projet est compilé à l'aide du build_and_link.sh.
    - Les exécutables générés sont `udp_client` et `udp_server`.
    - Le serveur s'exécute avec la commande `./server`.
    - Le client s'exécute avec la commande `./client`.
 
-**Notes d'Utilisation :**
+Notes d'Utilisation :
    - Le client envoie une requête au serveur sous forme de nombre.
    - Le serveur génère un tableau de nombres aléatoires en réponse.
    - Des messages d'erreur détaillés sont affichés en cas de problème lors de l'exécution.
 
-**Remarques Techniques :**
+Remarques Techniques :
    - La communication utilise des sockets UDP pour une interaction non connecté.
    - La gestion simple des erreurs est assurée à l'aide de la fonction `perror`.
 
