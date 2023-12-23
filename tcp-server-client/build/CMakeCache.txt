@@ -14,6 +14,9 @@
 # EXTERNAL cache entries
 ########################
 
+//No help, variable specified on the command line.
+CLIENT_SOURCE:UNINITIALIZED=tcp_client.c
+
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 
@@ -194,6 +197,9 @@ PKG_CONFIG_ARGN:STRING=
 
 //pkg-config executable
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
+
+//No help, variable specified on the command line.
+SERVER_SOURCE:UNINITIALIZED=tcp_server.c
 
 //Value Computed by CMake
 TCPProject_BINARY_DIR:STATIC=/home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/build

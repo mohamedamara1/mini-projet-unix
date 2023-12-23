@@ -1,4 +1,0 @@
-/home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug/CMakeFiles/server.dir
-/home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug/CMakeFiles/client.dir
-/home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/typicaluser/Desktop/9raya/projet_linux/tcp-server-client/cmake-build-debug/CMakeFiles/rebuild_cache.dir
