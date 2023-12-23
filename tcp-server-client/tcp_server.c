@@ -8,7 +8,7 @@
 #include <dirent.h>
 #include <locale.h>
 
-#define PORT 5010
+#define PORT 5013
 #define BUFFER_SIZE 1024
 
 #define USER "admin"
@@ -106,7 +106,6 @@ void handle_list_files(int client_socket, const char* buffer) {
 
 
 
-void handle_show_file_content(int client_socket, const char *filename) {
    void handle_show_file_content(int client_socket, const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file != NULL) {
@@ -138,7 +137,7 @@ void handle_show_file_content(int client_socket, const char *filename) {
     }
 }
 
-}
+
 
 
 void handle_send_session_duration(int client_socket, time_t login_time) {
