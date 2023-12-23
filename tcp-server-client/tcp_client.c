@@ -224,20 +224,9 @@ void on_list_files_button_clicked(GtkButton *button, gpointer user_data) {
 }
 
 
-// New function to send a request for file content
-void send_file_content_request(const char *filename) {
-    // Formulate the request for the "Show File Content" service
-    char request[BUFFER_SIZE];
-    snprintf(request, BUFFER_SIZE, "SHOW_FILE_CONTENT %s", filename);
-
-    // Allocate a buffer for the response
-    char response[BUFFER_SIZE];
-    size_t response_size = sizeof(response);
-
-    // Call the send_request function
-    send_request(&server_connection, request, response, response_size);
-
-    // Display the file content in a pop-up window
+// Function to display file content in a pop-up window
+void display_file_content(const char *file_content) {
+    // Create a pop-up window
     GtkWidget *popup_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(popup_window), "File Content");
     gtk_container_set_border_width(GTK_CONTAINER(popup_window), 10);
@@ -260,7 +249,7 @@ void send_file_content_request(const char *filename) {
     gtk_widget_show_all(scrolled_window);
 
     // Set the file content to the text view
-    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(file_content_text_view)), response, -1);
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(file_content_text_view)), file_content, -1);
 
     // Add the scrolled window to the pop-up window
     gtk_container_add(GTK_CONTAINER(popup_window), scrolled_window);
@@ -268,7 +257,25 @@ void send_file_content_request(const char *filename) {
     // Show all widgets in the pop-up window
     gtk_widget_show_all(popup_window);
 }
-// the on_show_file_content_button_clicked function
+
+// New function to send a request for file content
+void send_file_content_request(const char *filename) {
+    // Formulate the request for the "Show File Content" service
+    char request[BUFFER_SIZE];
+    snprintf(request, BUFFER_SIZE, "SHOW_FILE_CONTENT %s", filename);
+
+    // Allocate a buffer for the response
+    char response[BUFFER_SIZE];
+    size_t response_size = sizeof(response);
+
+    // Call the send_request function
+    send_request(&server_connection, request, response, response_size);
+
+    // Display the file content in a pop-up window
+    display_file_content(response);
+}
+
+// The on_show_file_content_button_clicked function
 void on_show_file_content_button_clicked(GtkButton *button, gpointer user_data) {
     // Get the filename from the user (you can use a GtkEntry for this)
     const char *filename = gtk_entry_get_text(GTK_ENTRY(user_data));
@@ -276,6 +283,7 @@ void on_show_file_content_button_clicked(GtkButton *button, gpointer user_data) 
     // Call the new function to send the request for file content
     send_file_content_request(filename);
 }
+
 
 void on_send_session_duration_button_clicked(GtkButton *button, gpointer user_data) {
     // Formulate the request for the "Send Date" service
